@@ -33,8 +33,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  // TODO:: remove later
-  console.log(`Incomming hook: Method: ${req.method},  Body: ${req.body}`);
   // just for healthcheck
   if (req.method == "GET") {
     return res.status(200).json({ ok: true });
@@ -44,62 +42,70 @@ export default async function handler(
     return res.status(400).json({ message: "Bad request" });
   }
 
-  if (req.body) {
-    let rawBody: string;
-    try {
-      rawBody = await getRawBody(req);
-    } catch (error) {
-      return res.status(400).json({ message: "Failed to read request body" });
-    }
+  // bodyParser is off, so the body only exists as a raw stream
+  let rawBody: string;
+  try {
+    rawBody = await getRawBody(req);
+  } catch (error) {
+    return res.status(400).json({ message: "Failed to read request body" });
+  }
 
-    const lineSignature = req.headers["x-line-signature"] as string;
+  // TODO:: remove later
+  console.log(
+    `Incomming hook: Method: ${req.method},  Body: ${rawBody.slice(0, 200)}`,
+  );
 
-    if (!lineSignature) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+  if (!rawBody) {
+    return res.status(400).json({ message: "Empty body" });
+  }
 
-    //varify signature and early panic
-    try {
-      const validated = validateSignature(
-        rawBody,
-        LINE_CHANNEL_SECRET!,
-        lineSignature,
-      );
+  const lineSignature = req.headers["x-line-signature"] as string;
 
-      if (!validated) return res.status(400).json({ message: "Bad Request" });
-    } catch (error) {
-      return res.status(500).json({ message: "Panic: Verify signature" });
-    }
+  if (!lineSignature) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 
-    let events: LineWebhookEvent[];
+  //varify signature and early panic
+  try {
+    const validated = validateSignature(
+      rawBody,
+      LINE_CHANNEL_SECRET!,
+      lineSignature,
+    );
 
-    // deserialize body
-    try {
-      const pasred = JSON.parse(rawBody) as IncommingEvent;
-      events = pasred.events ?? [];
-    } catch (error) {
-      return res.status(400).json({ message: "Bad Request" });
-    }
+    if (!validated) return res.status(400).json({ message: "Bad Request" });
+  } catch (error) {
+    return res.status(500).json({ message: "Panic: Verify signature" });
+  }
 
-    // same as for ... range in go
-    // filter only event type messga for this POC
-    for (const e of events) {
-      if (e.type == "message") {
-        const userId = e.source?.userId;
-        if (!userId || !e.message) continue;
-        const userProfile = await getUserProfile(userId);
-        // init or upate user record
-        ensureRecord(userId, userProfile ?? undefined);
+  let events: LineWebhookEvent[];
 
-        // update user conversation
-        const text =
-          e.message.type == "text" ? (e.message.text ?? "") : e.message.type;
+  // deserialize body
+  try {
+    const pasred = JSON.parse(rawBody) as IncommingEvent;
+    events = pasred.events ?? [];
+  } catch (error) {
+    return res.status(400).json({ message: "Bad Request" });
+  }
 
-        //
-        e.message.text = text;
+  // same as for ... range in go
+  // filter only event type messga for this POC
+  for (const e of events) {
+    if (e.type == "message") {
+      const userId = e.source?.userId;
+      if (!userId || !e.message) continue;
+      const userProfile = await getUserProfile(userId);
+      // init or upate user record
+      ensureRecord(userId, userProfile ?? undefined);
 
-        addMessage(userId, e.message, MessageDirection.In, e.timestamp!);
-      }
+      // update user conversation
+      const text =
+        e.message.type == "text" ? (e.message.text ?? "") : e.message.type;
+
+      //
+      e.message.text = text;
+
+      addMessage(userId, e.message, MessageDirection.In, e.timestamp!);
     }
   }
 

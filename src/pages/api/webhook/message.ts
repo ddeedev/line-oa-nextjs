@@ -1,25 +1,37 @@
 import { LINE_CHANNEL_SECRET } from "@/config/app";
 import { LineWebhookEvent } from "@/third_party/line/message/types";
 import { validateSignature } from "@/third_party/line/message";
-import { NextResponse } from "next/server";
 import {
   addMessage,
   ensureRecord,
   MessageDirection,
 } from "@/internals/store/conversation";
 import { getUserProfile } from "@/third_party/line/api";
+import { NextApiRequest, NextApiResponse } from "next";
 
 type IncommingEvent = {
   events?: LineWebhookEvent[];
 };
 
-export async function POST(req: Request) {
-  const rawBody = await req.text();
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  // just for healthcheck
+  if (req.method == "GET") {
+    return res.status(200).json({ ok: true });
+  }
 
-  const lineSignature = req.headers.get("x-line-signature");
+  if (req.method != "POST") {
+    return res.status(400).json({ message: "Bad request" });
+  }
+
+  const rawBody = await req.body.text();
+
+  const lineSignature = req.headers["x-line-signature"] as string;
 
   if (!lineSignature) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
   //varify signature and early panic
@@ -30,13 +42,9 @@ export async function POST(req: Request) {
       lineSignature,
     );
 
-    if (!validated)
-      return NextResponse.json({ message: "Bad Request" }, { status: 400 });
+    if (!validated) return res.status(400).json({ message: "Bad Request" });
   } catch (error) {
-    return NextResponse.json(
-      { message: "Panic: Verify signature" },
-      { status: 500 },
-    );
+    return res.status(500).json({ message: "Panic: Verify signature" });
   }
 
   let events: LineWebhookEvent[];
@@ -46,7 +54,7 @@ export async function POST(req: Request) {
     const pasred = JSON.parse(rawBody) as IncommingEvent;
     events = pasred.events ?? [];
   } catch (error) {
-    return NextResponse.json({ message: "Bad Request" }, { status: 400 });
+    return res.status(400).json({ message: "Bad Request" });
   }
 
   // same as for ... range in go
@@ -70,10 +78,5 @@ export async function POST(req: Request) {
   }
   // filter only event type messga for this POC
 
-  return NextResponse.json({ ok: true }, { status: 200 });
-}
-
-// just for healthcheck
-export async function GET() {
-  return NextResponse.json({ ok: true }, { status: 200 });
+  return res.status(200).json({ ok: true });
 }

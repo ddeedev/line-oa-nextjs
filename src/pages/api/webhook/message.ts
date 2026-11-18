@@ -20,7 +20,12 @@ export const config = {
 async function getRawBody(readable: Readable): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const chunk of readable) {
-    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    // serverless platforms may hand us latin1-decoded strings;
+    // re-encode as latin1 to restore the exact original bytes
+    // (default utf8 would corrupt non-ASCII and break the signature)
+    chunks.push(
+      typeof chunk === "string" ? Buffer.from(chunk, "latin1") : chunk,
+    );
   }
   return Buffer.concat(chunks).toString("utf8");
 }
@@ -78,8 +83,9 @@ export default async function handler(
 
     if (!validated) {
       // secret present but mismatch (wrong value or transformed body)
+      const bytes = Buffer.byteLength(rawBody);
       console.log(
-        `Webhook 400: signature mismatch (secret len: ${LINE_CHANNEL_SECRET?.length ?? 0})`,
+        `Webhook 400: signature mismatch (secret len: ${LINE_CHANNEL_SECRET?.length ?? 0}, body bytes: ${bytes}, non-ascii body: ${rawBody.length !== bytes})`,
       );
       return res.status(400).json({ message: "Bad Request" });
     }

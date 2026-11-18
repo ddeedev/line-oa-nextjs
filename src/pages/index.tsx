@@ -8,16 +8,26 @@ import {
   type ConversationOveriew,
   type ChatMessage,
 } from "@/internals/store/conversation";
-import { APP_API_KEY } from "@/config/app";
 
-function buildInternalHeader(): Headers {
+interface HomeProps {
+  apiKey: string;
+}
+
+export async function getServerSideProps(): Promise<{
+  props: HomeProps;
+}> {
+  return { props: { apiKey: process.env.APP_API_KEY ?? "" } };
+}
+
+// FOR POC only. do not use on production xd
+function buildInternalHeader(apiKey: string): Headers {
   const headers = new Headers();
   headers.set("Content-Type", "application/json");
-  headers.set("x-api-key", `${APP_API_KEY}`);
+  headers.set("x-api-key", apiKey);
   return headers;
 }
 
-export default function Home() {
+export default function Home({ apiKey }: HomeProps) {
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [conversations, setConversations] = useState<
     Array<ConversationOveriew>
@@ -47,7 +57,7 @@ export default function Home() {
       const res = await fetch("/api/conversations", {
         method: "POST",
         cache: "no-store",
-        headers: buildInternalHeader(),
+        headers: buildInternalHeader(apiKey),
       });
 
       if (!res.ok) return;
@@ -59,7 +69,7 @@ export default function Home() {
       const detail = error instanceof Error ? error.message : "Unknown error";
       console.log(`Failed load conversations: ${detail}`);
     }
-  }, []);
+  }, [apiKey]);
 
   // heavy load all conversations
   useEffect(() => {
@@ -71,22 +81,25 @@ export default function Home() {
     };
   }, [loadConversations]);
 
-  const handleSelect = useCallback((userId: string) => {
-    setActiveUserId(userId);
+  const handleSelect = useCallback(
+    (userId: string) => {
+      setActiveUserId(userId);
 
-    // optimistic mark as read, server syncs with LINE
-    setConversations((prev) =>
-      prev.map((c) => (c.userId === userId ? { ...c, unreadCount: 0 } : c)),
-    );
+      // optimistic mark as read, server syncs with LINE
+      setConversations((prev) =>
+        prev.map((c) => (c.userId === userId ? { ...c, unreadCount: 0 } : c)),
+      );
 
-    fetch(`/api/conversations/${userId}/messages/read`, {
-      method: "POST",
-      headers: buildInternalHeader(),
-    }).catch((error) => {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      console.log(`Failed to mark as read: ${detail}`);
-    });
-  }, []);
+      fetch(`/api/conversations/${userId}/messages/read`, {
+        method: "POST",
+        headers: buildInternalHeader(apiKey),
+      }).catch((error) => {
+        const detail = error instanceof Error ? error.message : "Unknown error";
+        console.log(`Failed to mark as read: ${detail}`);
+      });
+    },
+    [apiKey],
+  );
 
   const handleSend = useCallback(
     async (text: string) => {
@@ -96,7 +109,7 @@ export default function Home() {
       try {
         const res = await fetch(`/api/conversations/${userId}/messages/send`, {
           method: "POST",
-          headers: buildInternalHeader(),
+          headers: buildInternalHeader(apiKey),
           body: JSON.stringify({ messages: [text] }),
         });
 
@@ -122,7 +135,7 @@ export default function Home() {
         console.log(`Failed to send message: ${detail}`);
       }
     },
-    [activeConversation],
+    [activeConversation, apiKey],
   );
 
   const getStatusInfo = () => {

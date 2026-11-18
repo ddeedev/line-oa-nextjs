@@ -22,10 +22,6 @@
 
 # APPENDIX
 
-### Security note (POC)
-
-The internal API key (`APP_API_KEY`) is bundled into the client, so the `x-api-key` check on `/api/conversations*` is not real protection — it only guards against casual misuse. For production, put the webapp behind real auth (e.g. LINE Login) and keep secrets server-side.
-
 ### API
 
 <https://developers.line.biz/en/reference/messaging-api/>
@@ -45,6 +41,7 @@ What AI did in this session:
 
 1. **Mock data** — generated `src/internals/mocks/conversations.ts` (mock users, unread counts, last messages, message histories) and wired it into the sidebar using the existing `ConversationCard` component, adding click-to-select state
 2. **Theme audit** — reviewed all components for XP/Luna theme consistency and reported that `chatWindow.tsx` was still an unstyled placeholder (plus minor font-stack inconsistencies)
+3. **Review + bugfix pass** — reviewed the author's API/client code (stale closures, `JSON.parse` on pre-parsed bodies, unused path params, method guards) and fixed them; smoke-tested endpoints
 
 What AI did NOT do: requirements, project structure, LINE API integration (`src/third_party/line`, webhook, in-memory store), the retro XP shell/theme design, and the chat window implementation (hand-written by the author; AI may review it later).
 

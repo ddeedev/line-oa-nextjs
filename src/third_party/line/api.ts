@@ -1,27 +1,5 @@
-import {
-  LINE_API_BASE_URL,
-  LINE_CHANNEL_SECRET,
-  LINE_CHANNEL_ACCESS_TOKEN,
-} from "@/config/app";
+import { LINE_API_BASE_URL, LINE_CHANNEL_ACCESS_TOKEN } from "@/config/app";
 import { UserProfile } from "./user/types";
-import { headers } from "next/headers";
-
-/*
-async function fetchWithHeaders(url: string): Promise<Response> {
-  const headers = new Headers();
-  headers.set('Content-Type', 'application/json');
-  const requestOptions = {
-    method: 'GET',
-    headers: headers
-  };
-
-  const response = await fetch(url, requestOptions);
-  if (!response.ok) {
-    throw new Error('The server resoundingly rebuked our headers: ' + response.statusText);
-  }
-  return response;
-}
-*/
 
 function buildHeader(): Headers {
   const headers = new Headers();
@@ -50,10 +28,12 @@ export async function getUserProfile(
     const data = (await res.json()) as UserProfile;
     return data;
   } catch (error) {
-    throw new Error("Cannot get user profile");
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Cannot get user profile ${detail}`);
   }
 }
 
+// push aka send messages to user
 export async function pushMessage(
   userId: string,
   messages: Array<string>,
@@ -82,6 +62,35 @@ export async function pushMessage(
       throw new Error("Cannot send message to user");
     }
   } catch (error) {
-    throw new Error("Cannot send message to user");
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Cannot send message to user ${detail}`);
+  }
+}
+
+/*curl -v -X POST https://api.line.me/v2/bot/chat/markAsRead \
+-son' \
+-H 'Authorization: Bearer {channel access token}' \
+-d '{
+  "markAsReadToken": "{mark as read token}"
+*/
+export async function markAsRead(token: string): Promise<void> {
+  const headers = buildHeader();
+  const jsonBody = {
+    markAsReadToken: token,
+  };
+
+  try {
+    const res = await fetch(`${LINE_API_BASE_URL}/v2/bot/chat/markAsRead`, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(jsonBody),
+    });
+
+    if (!res.ok) {
+      throw new Error("MarkAsRead faild");
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`MarkAsRead faild ${detail}`);
   }
 }

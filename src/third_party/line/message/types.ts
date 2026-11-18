@@ -18,7 +18,7 @@ export interface Message {
   id: string;
   type: string; // type :"text"
   text: string;
-  quoteToken: string;
+  quoteToken?: string;
   markAsReadToken?: string;
   emojis?: [unknown];
   mention?: unknown;

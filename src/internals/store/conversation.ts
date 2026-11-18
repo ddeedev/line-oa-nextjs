@@ -16,7 +16,7 @@ export interface ConversationOveriew {
   displayName: string;
   pictureUrl?: string;
   unreadCount: number;
-  lastMessage: ChatMessage;
+  lastMessage: ChatMessage | null;
 }
 
 export interface ConversationRecord extends UserProfile {
@@ -105,4 +105,21 @@ export function getConversation(
 export function markAsRead(userId: string): void {
   let record = converstaions.get(userId);
   if (record) record.unreadCount = 0;
+}
+
+export function listConversations(): ConversationOveriew[] {
+  return [...converstaions.values()]
+    .map((con) => ({
+      userId: con.userId,
+      displayName: con.displayName,
+      pictureUrl: con.pictureUrl,
+      unreadCount: con.unreadCount,
+      lastMessage:
+        con.message.length > 0 ? con.message[con.message.length - 1] : null,
+    }))
+    .sort((a, b) => {
+      const timeA = a.lastMessage?.timestamp ?? 0;
+      const timeB = b.lastMessage?.timestamp ?? 0;
+      return timeB - timeA;
+    });
 }

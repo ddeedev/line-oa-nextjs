@@ -9,7 +9,7 @@ interface ConversationSummary {
     text: string;
     direction: MessageDirection;
     timestamp: number;
-  };
+  } | null;
   size?: number;
   isActive?: boolean; // dispaly chat slection
   onClick?: () => void;

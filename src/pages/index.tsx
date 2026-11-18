@@ -107,7 +107,9 @@ export default function Home() {
                   displayName={conversation.displayName}
                   pictureUrl={conversation.pictureUrl}
                   unreadCount={conversation.unreadCount}
-                  lastMessage={conversation.lastMessage}
+                  lastMessage={
+                    conversation.lastMessage ? conversation.lastMessage : null
+                  }
                   isActive={conversation.userId === activeUserId}
                   onClick={() => setActiveUserId(conversation.userId)}
                 />

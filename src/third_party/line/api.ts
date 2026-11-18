@@ -55,6 +55,7 @@ export async function pushMessage(
   try {
     const res = await fetch(`${LINE_API_BASE_URL}/v2/bot/message/push`, {
       headers: headers,
+      method: "POST",
       body: JSON.stringify(jsonBody),
     });
 

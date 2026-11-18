@@ -49,7 +49,9 @@ export default async function handler(
     await pushMessage(userId, body.messages);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unknown error";
-    return res.status(502).json({ message: `Failed to send message ${detail}` });
+    return res
+      .status(502)
+      .json({ message: `Failed to send message ${detail}` });
   }
 
   const sentMessage: Array<ChatMessage> = body.messages.map((text) =>

@@ -52,24 +52,16 @@ export default async function handler(
   try {
     rawBody = await getRawBody(req);
   } catch (error) {
-    console.log("Webhook 400: failed to read body");
     return res.status(400).json({ message: "Failed to read request body" });
   }
 
-  // TODO:: remove later
-  console.log(
-    `Incomming hook: Method: ${req.method},  Body: ${rawBody.slice(0, 200)}`,
-  );
-
   if (!rawBody) {
-    console.log("Webhook 400: empty body");
     return res.status(400).json({ message: "Empty body" });
   }
 
   const lineSignature = req.headers["x-line-signature"] as string;
 
   if (!lineSignature) {
-    console.log("Webhook 401: missing x-line-signature header");
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -81,16 +73,8 @@ export default async function handler(
       lineSignature,
     );
 
-    if (!validated) {
-      // secret present but mismatch (wrong value or transformed body)
-      const bytes = Buffer.byteLength(rawBody);
-      console.log(
-        `Webhook 400: signature mismatch (secret len: ${LINE_CHANNEL_SECRET?.length ?? 0}, body bytes: ${bytes}, non-ascii body: ${rawBody.length !== bytes})`,
-      );
-      return res.status(400).json({ message: "Bad Request" });
-    }
+    if (!validated) return res.status(400).json({ message: "Bad Request" });
   } catch (error) {
-    console.log("Webhook 500: validateSignature threw (secret missing?)");
     return res.status(500).json({ message: "Panic: Verify signature" });
   }
 
@@ -101,7 +85,6 @@ export default async function handler(
     const pasred = JSON.parse(rawBody) as IncommingEvent;
     events = pasred.events ?? [];
   } catch (error) {
-    console.log("Webhook 400: invalid JSON body");
     return res.status(400).json({ message: "Bad Request" });
   }
 

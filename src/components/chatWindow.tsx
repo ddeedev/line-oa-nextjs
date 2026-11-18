@@ -10,7 +10,7 @@ interface ChatWindowProps {
   messages: ChatMessage[];
   peerName: string;
   selfName?: string;
-  onSend: (text: string) => void;
+  onSend: (text: string) => Promise<boolean>;
 }
 
 function formatTime(timestamp: number): string {
@@ -27,17 +27,24 @@ export default function ChatWindow({
   onSend,
 }: ChatWindowProps) {
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length]);
 
-  const send = () => {
+  const send = async () => {
     const text = draft.trim();
-    if (!text) return;
-    onSend(text);
+    if (!text || sending) return;
+
+    setSending(true);
     setDraft("");
+    const ok = await onSend(text);
+    setSending(false);
+
+    // put the text back so nothing is silently lost
+    if (!ok) setDraft(text);
   };
 
   return (
@@ -90,10 +97,10 @@ export default function ChatWindow({
         />
         <button
           onClick={send}
-          disabled={!draft.trim()}
+          disabled={!draft.trim() || sending}
           className="flex h-[27px] items-center justify-center border border-white border-b-[#404040] border-r-[#404040] bg-[#ece9d8] px-4 font-bold text-black shadow-sm transition-colors active:translate-x-[1px] active:translate-y-[1px] active:border-t-[#404040] active:border-l-[#404040] active:border-b-white active:border-r-white active:bg-[#e4e1de] disabled:opacity-50"
         >
-          Send
+          {sending ? "Sending..." : "Send"}
         </button>
       </div>
     </div>

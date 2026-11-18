@@ -102,8 +102,8 @@ export default function Home({ apiKey }: HomeProps) {
   );
 
   const handleSend = useCallback(
-    async (text: string) => {
-      if (!activeConversation) return;
+    async (text: string): Promise<boolean> => {
+      if (!activeConversation) return false;
       const userId = activeConversation.userId;
 
       try {
@@ -113,10 +113,13 @@ export default function Home({ apiKey }: HomeProps) {
           body: JSON.stringify({ messages: [text] }),
         });
 
-        if (!res.ok) return;
+        if (!res.ok) {
+          console.log(`Failed to send message: HTTP ${res.status}`);
+          return false;
+        }
         const data = (await res.json()) as { message: ChatMessage[] };
         const sent = data.message;
-        if (sent.length === 0) return;
+        if (sent.length === 0) return false;
 
         // merge locally, next poll confirms from the server
         setConversations((prev) =>
@@ -130,9 +133,11 @@ export default function Home({ apiKey }: HomeProps) {
               : c,
           ),
         );
+        return true;
       } catch (error) {
         const detail = error instanceof Error ? error.message : "Unknown error";
         console.log(`Failed to send message: ${detail}`);
+        return false;
       }
     },
     [activeConversation, apiKey],
@@ -248,6 +253,7 @@ export default function Home({ apiKey }: HomeProps) {
             <div className="flex-1 overflow-hidden bg-white">
               {activeConversation ? (
                 <ChatWindow
+                  key={activeConversation.userId}
                   messages={activeConversation.messages}
                   peerName={activeConversation.displayName}
                   onSend={handleSend}

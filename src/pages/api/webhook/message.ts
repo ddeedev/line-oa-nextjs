@@ -33,6 +33,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+  // TODO:: remove later
   console.log(`Incomming hook: Method: ${req.method},  Body: ${req.body}`);
   // just for healthcheck
   if (req.method == "GET") {

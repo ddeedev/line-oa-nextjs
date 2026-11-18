@@ -6,7 +6,7 @@ export enum MessageDirection {
   Out,
 }
 
-interface ChatMessage extends Message {
+export interface ChatMessage extends Message {
   direction: MessageDirection;
   timestamp: number;
 }

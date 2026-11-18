@@ -22,6 +22,10 @@
 
 # APPENDIX
 
+### Security note (POC)
+
+The internal API key (`APP_API_KEY`) is bundled into the client, so the `x-api-key` check on `/api/conversations*` is not real protection — it only guards against casual misuse. For production, put the webapp behind real auth (e.g. LINE Login) and keep secrets server-side.
+
 ### API
 
 <https://developers.line.biz/en/reference/messaging-api/>

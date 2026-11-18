@@ -3,18 +3,30 @@
 import ChatWindow from "@/components/chatWindow";
 import Avatar from "@/components/avatar";
 import ConversationCard from "@/components/conversationCard";
-import { mockConversations } from "@/internals/mocks/conversations";
 import { useCallback, useEffect, useState } from "react";
+import {
+  type ConversationOveriew,
+  type ChatMessage,
+} from "@/internals/store/conversation";
+import { APP_API_KEY } from "@/config/app";
+
+function buildInternalHeader(): Headers {
+  const headers = new Headers();
+  headers.set("Content-Type", "application/json");
+  headers.set("x-api-key", `${APP_API_KEY}`);
+  return headers;
+}
 
 export default function Home() {
   const [configured, setConfigured] = useState<boolean | null>(null);
-  const [activeUserId, setActiveUserId] = useState<string>(
-    mockConversations[0].userId,
-  );
+  const [conversations, setConversations] = useState<
+    Array<ConversationOveriew>
+  >([]);
+  const [activeUserId, setActiveUserId] = useState<string | null>(null);
 
+  // derive instead of duplicating state; stays fresh on every poll
   const activeConversation =
-    mockConversations.find((c) => c.userId === activeUserId) ??
-    mockConversations[0];
+    conversations.find((c) => c.userId === activeUserId) ?? conversations[0];
 
   const initConfig = useCallback(async () => {
     try {
@@ -29,6 +41,89 @@ export default function Home() {
   useEffect(() => {
     initConfig();
   }, [initConfig]);
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        cache: "no-store",
+        headers: buildInternalHeader(),
+      });
+
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        conversations: ConversationOveriew[];
+      };
+      setConversations(data.conversations);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Unknown error";
+      console.log(`Failed load conversations: ${detail}`);
+    }
+  }, []);
+
+  // heavy load all conversations
+  useEffect(() => {
+    const initial = setTimeout(loadConversations, 0);
+    const timer = setInterval(loadConversations, 3000);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(timer);
+    };
+  }, [loadConversations]);
+
+  const handleSelect = useCallback((userId: string) => {
+    setActiveUserId(userId);
+
+    // optimistic mark as read, server syncs with LINE
+    setConversations((prev) =>
+      prev.map((c) => (c.userId === userId ? { ...c, unreadCount: 0 } : c)),
+    );
+
+    fetch(`/api/conversations/${userId}/messages/read`, {
+      method: "POST",
+      headers: buildInternalHeader(),
+    }).catch((error) => {
+      const detail = error instanceof Error ? error.message : "Unknown error";
+      console.log(`Failed to mark as read: ${detail}`);
+    });
+  }, []);
+
+  const handleSend = useCallback(
+    async (text: string) => {
+      if (!activeConversation) return;
+      const userId = activeConversation.userId;
+
+      try {
+        const res = await fetch(`/api/conversations/${userId}/messages/send`, {
+          method: "POST",
+          headers: buildInternalHeader(),
+          body: JSON.stringify({ messages: [text] }),
+        });
+
+        if (!res.ok) return;
+        const data = (await res.json()) as { message: ChatMessage[] };
+        const sent = data.message;
+        if (sent.length === 0) return;
+
+        // merge locally, next poll confirms from the server
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.userId === userId
+              ? {
+                  ...c,
+                  messages: [...c.messages, ...sent],
+                  lastMessage: sent[sent.length - 1],
+                }
+              : c,
+          ),
+        );
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : "Unknown error";
+        console.log(`Failed to send message: ${detail}`);
+      }
+    },
+    [activeConversation],
+  );
 
   const getStatusInfo = () => {
     if (configured === null) {
@@ -101,7 +196,7 @@ export default function Home() {
 
             {/* Simulated contact list container with sunken XP border */}
             <div className="flex-1 overflow-y-auto bg-white m-2 border border-[#7f9db9] shadow-[inset_1px_1px_2px_rgba(0,0,0,0.1)] p-1">
-              {mockConversations.map((conversation) => (
+              {conversations.map((conversation) => (
                 <ConversationCard
                   key={conversation.userId}
                   displayName={conversation.displayName}
@@ -110,8 +205,8 @@ export default function Home() {
                   lastMessage={
                     conversation.lastMessage ? conversation.lastMessage : null
                   }
-                  isActive={conversation.userId === activeUserId}
-                  onClick={() => setActiveUserId(conversation.userId)}
+                  isActive={conversation.userId === activeConversation?.userId}
+                  onClick={() => handleSelect(conversation.userId)}
                 />
               ))}
             </div>
@@ -121,27 +216,34 @@ export default function Home() {
           <main className="flex min-w-0 flex-1 flex-col bg-white">
             <header className="flex items-center gap-3 border-b border-[#dfdcd7] bg-[#ece9d8] px-4 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
               <Avatar
-                displayName={activeConversation.displayName}
-                pictureUrl={activeConversation.pictureUrl}
+                displayName={activeConversation?.displayName ?? "?"}
+                pictureUrl={activeConversation?.pictureUrl}
                 size={40}
               />
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-xs font-bold text-[#00136b]">
-                  {activeConversation.displayName}
+                  {activeConversation?.displayName ??
+                    "No conversation selected"}
                 </h2>
                 <p className="truncate font-mono text-[10px] text-[#666]">
-                  {activeConversation.userId}
+                  {activeConversation?.userId ?? "-"}
                 </p>
               </div>
             </header>
 
             {/* Chat content container */}
             <div className="flex-1 overflow-hidden bg-white">
-              <ChatWindow
-                messages={activeConversation.messages}
-                peerName={activeConversation.displayName}
-                onSend={() => null}
-              />
+              {activeConversation ? (
+                <ChatWindow
+                  messages={activeConversation.messages}
+                  peerName={activeConversation.displayName}
+                  onSend={handleSend}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs italic text-[#808080]">
+                  No active conversations loaded...
+                </div>
+              )}
             </div>
           </main>
         </div>

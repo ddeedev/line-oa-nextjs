@@ -17,6 +17,7 @@ export interface ConversationOveriew {
   pictureUrl?: string;
   unreadCount: number;
   lastMessage: ChatMessage | null;
+  messages: ChatMessage[];
 }
 
 export interface ConversationRecord extends UserProfile {
@@ -42,7 +43,7 @@ export function ensureRecord(
   userId: string,
   profile?: Partial<UserProfile>,
 ): ConversationRecord {
-  let existing = converstaions.get(userId);
+  const existing = converstaions.get(userId);
 
   // update user info
   if (existing) {
@@ -59,7 +60,7 @@ export function ensureRecord(
   const newRecord: ConversationRecord = {
     userId,
     displayName: profile?.displayName ?? userId,
-    pictureUrl: profile?.pictureUrl ?? userId,
+    pictureUrl: profile?.pictureUrl,
     unreadCount: 0,
     message: [],
   };
@@ -76,7 +77,7 @@ export function addMessage(
   timestamp: number,
 ): ChatMessage {
   // get existing record
-  let record = ensureRecord(userId);
+  const record = ensureRecord(userId);
 
   if (direction == MessageDirection.In) {
     // *mut record.unreadCount += 1
@@ -103,7 +104,7 @@ export function getConversation(
 
 // must sync with markAsRead enpoint of line biz
 export function markAsRead(userId: string): void {
-  let record = converstaions.get(userId);
+  const record = converstaions.get(userId);
   if (record) record.unreadCount = 0;
 }
 
@@ -116,6 +117,7 @@ export function listConversations(): ConversationOveriew[] {
       unreadCount: con.unreadCount,
       lastMessage:
         con.message.length > 0 ? con.message[con.message.length - 1] : null,
+      messages: [...con.message],
     }))
     .sort((a, b) => {
       const timeA = a.lastMessage?.timestamp ?? 0;

@@ -67,7 +67,7 @@ export default function ChatWindow({
                     </span>
                   </p>
                 )}
-                <p className="pl-2 wrap-break-words whitespace-pre-wrap text-black">
+                <p className="pl-2 break-words whitespace-pre-wrap text-black">
                   {message.text}
                 </p>
               </div>

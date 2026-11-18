@@ -24,15 +24,15 @@
 
 ### API
 
-<https://developers.line.biz/en/reference/messaging-api/>
-<https://developers.line.biz/en/docs/messaging-api/line-bot-sdk/>
-example from <https://github.com/line/line-bot-sdk-nodejs/blob/3fc50b884e3c3d44da9d5392a2ea8e57c2e00f93/lib/validate-signature.ts>
+- <https://developers.line.biz/en/reference/messaging-api/>
+- <https://developers.line.biz/en/docs/messaging-api/line-bot-sdk/>
+- example from <https://github.com/line/line-bot-sdk-nodejs/blob/3fc50b884e3c3d44da9d5392a2ea8e57c2e00f93/lib/validate-signature.ts>
 
 ### UI
 
-<https://github.com/charanjit-singh/windows95-shadcn>
-<https://windows95-shadcn.vercel.app/>
-reuse asset from <https://github.com/thesixnetwork/sixscan-frontend>
+- <https://github.com/charanjit-singh/windows95-shadcn>
+- <https://windows95-shadcn.vercel.app/>
+- reuse asset from <https://github.com/thesixnetwork/sixscan-frontend>
 
 ## AI Usage
 

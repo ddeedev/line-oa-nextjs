@@ -121,7 +121,7 @@ export default function Home() {
               <Avatar
                 displayName={activeConversation.displayName}
                 pictureUrl={activeConversation.pictureUrl}
-                size={36}
+                size={40}
               />
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-xs font-bold text-[#00136b]">
@@ -135,7 +135,11 @@ export default function Home() {
 
             {/* Chat content container */}
             <div className="flex-1 overflow-hidden bg-white">
-              <ChatWindow />
+              <ChatWindow
+                messages={activeConversation.messages}
+                peerName={activeConversation.displayName}
+                onSend={() => null}
+              />
             </div>
           </main>
         </div>

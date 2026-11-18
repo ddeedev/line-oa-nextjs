@@ -12,4 +12,11 @@
    1.1 Create Line developer account
    1.2 Create Line bussisness account
 2. Build web app to manage line official account
-   2.1 Authen - None
+   2.1 List conversations
+   2.2 Enter conversation
+   2.3 User Metadata: user name, image, last message, read or unread
+
+APPENDIX:
+<https://developers.line.biz/en/reference/messaging-api/>
+<https://developers.line.biz/en/docs/messaging-api/line-bot-sdk/>
+example from <https://github.com/line/line-bot-sdk-nodejs/blob/3fc50b884e3c3d44da9d5392a2ea8e57c2e00f93/lib/validate-signature.ts>

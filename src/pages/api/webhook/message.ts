@@ -8,6 +8,22 @@ import {
 } from "@/internals/store/conversation";
 import { getUserProfile } from "@/third_party/line/api";
 import { NextApiRequest, NextApiResponse } from "next";
+import { Readable } from "stream";
+
+// Disable Next.js default body parser so we can get the raw body string for signature validation
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+async function getRawBody(readable: Readable): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of readable) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
 
 type IncommingEvent = {
   events?: LineWebhookEvent[];
@@ -17,6 +33,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+  console.log(`Incomming hook: Method: ${req.method},  Body: ${req.body}`);
   // just for healthcheck
   if (req.method == "GET") {
     return res.status(200).json({ ok: true });
@@ -26,7 +43,12 @@ export default async function handler(
     return res.status(400).json({ message: "Bad request" });
   }
 
-  const rawBody = await req.body.text();
+  let rawBody: string;
+  try {
+    rawBody = await getRawBody(req);
+  } catch (error) {
+    return res.status(400).json({ message: "Failed to read request body" });
+  }
 
   const lineSignature = req.headers["x-line-signature"] as string;
 
@@ -58,6 +80,7 @@ export default async function handler(
   }
 
   // same as for ... range in go
+  // filter only event type messga for this POC
   for (const e of events) {
     if (e.type == "message") {
       const userId = e.source?.userId;
@@ -76,7 +99,5 @@ export default async function handler(
       addMessage(userId, e.message, MessageDirection.In, e.timestamp!);
     }
   }
-  // filter only event type messga for this POC
-
   return res.status(200).json({ ok: true });
 }

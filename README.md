@@ -15,6 +15,10 @@
    2.1 List conversations
    2.2 Enter conversation
    2.3 User Metadata: user name, image, last message, read or unread
+3. API Integration
+   3.1 UserPrifile
+   3.2 MarkAsReade
+   3.3 Push Message
 
 APPENDIX:
 <https://developers.line.biz/en/reference/messaging-api/>

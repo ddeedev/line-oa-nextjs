@@ -1,7 +1,7 @@
 export interface UserProfile {
-  userId: String;
-  displayName: String;
-  language?: String; // idc
-  pictureUrl?: String;
-  statusMessage?: String; // user bio message
+  userId: string;
+  displayName: string;
+  language?: string; // idc
+  pictureUrl?: string;
+  statusMessage?: string; // user bio message
 }

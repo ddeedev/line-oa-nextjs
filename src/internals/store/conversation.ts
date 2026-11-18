@@ -14,7 +14,7 @@ interface ChatMessage extends Message {
 export interface ConversationOveriew {
   userId: string;
   displayName: string;
-  pictureUrl?: String;
+  pictureUrl?: string;
   unreadCount: number;
   lastMessage: ChatMessage;
 }

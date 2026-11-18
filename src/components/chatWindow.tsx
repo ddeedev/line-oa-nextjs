@@ -11,6 +11,7 @@ interface ChatWindowProps {
   peerName: string;
   selfName?: string;
   onSend: (text: string) => Promise<boolean>;
+  onClick?: () => void;
 }
 
 function formatTime(timestamp: number): string {
@@ -25,6 +26,7 @@ export default function ChatWindow({
   peerName,
   selfName = "You",
   onSend,
+  onClick,
 }: ChatWindowProps) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -48,7 +50,10 @@ export default function ChatWindow({
   };
 
   return (
-    <div className="flex h-full flex-col font-[Tahoma,sans-serif] text-xs border-[#808080] bg-[#f1eeeb]">
+    <div
+      className="flex h-full flex-col font-[Tahoma,sans-serif] text-xs border-[#808080] bg-[#f1eeeb]"
+      onClick={onClick}
+    >
       {/* MSN-style conversation transcript */}
       <div className="flex-1 overflow-y-auto m-2 mb-0 border border-[#7f9db9] bg-white p-2 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.1)]">
         {messages.length === 0 ? (

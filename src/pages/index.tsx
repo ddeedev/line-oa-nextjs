@@ -117,6 +117,17 @@ export default function Home({ apiKey }: HomeProps) {
           console.log(`Failed to send message: HTTP ${res.status}`);
           return false;
         }
+
+        // mark as read if interact with user
+        await fetch(`/api/conversations/${userId}/messages/read`, {
+          method: "POST",
+          headers: buildInternalHeader(apiKey),
+        }).catch((error) => {
+          const detail =
+            error instanceof Error ? error.message : "Unknown error";
+          console.log(`Failed to mark as read: ${detail}`);
+        });
+
         const data = (await res.json()) as { message: ChatMessage[] };
         const sent = data.message;
         if (sent.length === 0) return false;
@@ -257,6 +268,7 @@ export default function Home({ apiKey }: HomeProps) {
                   messages={activeConversation.messages}
                   peerName={activeConversation.displayName}
                   onSend={handleSend}
+                  onClick={() => handleSelect(activeConversation.userId)}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-xs italic text-[#808080]">

@@ -3,6 +3,7 @@
 import ChatWindow from "@/components/chatWindow";
 import Avatar from "@/components/avatar";
 import ConversationCard from "@/components/conversationCard";
+import QrDialog from "@/components/qrDialog";
 import { useCallback, useEffect, useState } from "react";
 import {
   type ConversationOveriew,
@@ -33,6 +34,7 @@ export default function Home({ apiKey }: HomeProps) {
     Array<ConversationOveriew>
   >([]);
   const [activeUserId, setActiveUserId] = useState<string | null>(null);
+  const [qrOpen, setQrOpen] = useState(false);
 
   // derive instead of duplicating state; stays fresh on every poll
   const activeConversation =
@@ -221,6 +223,15 @@ export default function Home({ apiKey }: HomeProps) {
                   {status.text}
                 </p>
               </div>
+              <button
+                type="button"
+                title="Add friend (QR code)"
+                aria-label="Add friend (QR code)"
+                onClick={() => setQrOpen(true)}
+                className="shrink-0 border border-white border-b-[#404040] border-r-[#404040] bg-[#ece9d8] px-2.5 py-1 text-[11px] font-bold text-[#00136b] shadow-sm active:translate-x-[1px] active:translate-y-[1px] active:border-t-[#404040] active:border-l-[#404040] active:border-b-white active:border-r-white active:bg-[#e4e1de]"
+              >
+                Add Friend
+              </button>
             </header>
 
             {/* Simulated contact list container with sunken XP border */}
@@ -285,6 +296,12 @@ export default function Home({ apiKey }: HomeProps) {
           <span className="border-l border-r border-[#808080] px-2">UTF-8</span>
         </footer>
       </div>
+
+      <QrDialog
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        url="https://lin.ee/pYbduLgi"
+      />
     </div>
   );
 }

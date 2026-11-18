@@ -20,7 +20,7 @@
    3.2 MarkAsReade
    3.3 Push Message
 
-# APPENDIX
+## APPENDIX
 
 ### API
 
@@ -32,6 +32,7 @@ example from <https://github.com/line/line-bot-sdk-nodejs/blob/3fc50b884e3c3d44d
 
 <https://github.com/charanjit-singh/windows95-shadcn>
 <https://windows95-shadcn.vercel.app/>
+reuse asset from <https://github.com/thesixnetwork/sixscan-frontend>
 
 ## AI Usage
 
